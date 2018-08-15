@@ -2,7 +2,7 @@
 import React from 'react'
 import styled, {css} from 'styled-components'
 import {withRouter} from 'react-router-dom'
-import ListHeader from './ListHeader'
+import ToolHeader from './ToolHeader'
 import {Icon} from 'semantic-ui-react'
 
 const RootStyle = styled.div`
@@ -18,39 +18,27 @@ const HeaderStyle = styled.div`
     width:100%;
 `
 
-const IconStyle = styled.div`
-    color:white;
-    position:absolute;
-    top:95%;
-    left:200px;
-    cursor:pointer;
-    width:20px;
-    height:20px;
-    ${props => props.compressed && css`
-        left: 30px;
-    `}
 
+const ArrowStyle = styled.div`
+    position:absolute;
+    bottom:20px;
+    color:#fff;
+    left:25%;
+    ${props => props.isToolbarExpanded && css`
+        left:10%;
+    `}
 `
+
 
 
 class SidebarNormal extends React.Component {
 
     state = {
-        activeMenuKey:'dashboard',
+        activeMenuKey:'status',
         isShowSubmenu:true
     }
 
-    componentDidMount = () => {
-        const path =  this.props.location.pathname
-        const menuActive = this.props.fragments.filter(x => x.path === path)
-        this.setState({
-            activeMenuKey: menuActive[0] && menuActive[0].key
-        })
-    }
-
-    onChangeSidebar = () => {
-        this.props.onChangeSidebar({ compressed: !this.props.compressed })
-    }
+    
 
     onChangeActiveMenu = (menuKey) => {
         if(this.state.activeMenuKey !== menuKey){
@@ -66,38 +54,43 @@ class SidebarNormal extends React.Component {
         })
     }
 
+    onToggleBar = () => {
+        this.props.toggleExpandedToolbar()
+    }
+
     render(){
-        const { visible, compressed, fragments } = this.props
+        const { isToolbarExpanded, toolbarFragments, setFilter, setAction }  = this.props
+
         const {activeMenuKey, isShowSubmenu} = this.state
 
-        if(!visible){
-            return null
-        }
         return(
             <RootStyle>
                 {
-                    fragments.map(x => (
-                        <HeaderStyle key={x.key} >
-                            <ListHeader 
-                                value={x}
-                                compressed={compressed}
+                    toolbarFragments.map((x,i) => (
+                        <HeaderStyle key={i} >
+                            <ToolHeader 
+                                fields={x}
+                                isToolbarExpanded={isToolbarExpanded}
                                 onChangeActiveMenu={this.onChangeActiveMenu}
                                 isActive={x.key === activeMenuKey}
                                 isSubMenu={false}
                                 isShowSubmenu={isShowSubmenu}
                                 onToggleSubmenu={this.onToggleSubmenu}
+                                setFilter={setFilter}
+                                setAction={setAction}
                             />
                             {
                                 !!(x.key === activeMenuKey) && !!x.children.length && isShowSubmenu && 
-                                x.children.map(y => (
-                                    <ListHeader 
-                                        value={y}
-                                        key={y.key}
+                                x.children.map((y,j) => (
+                                    <ToolHeader 
+                                        fields={y}
+                                        key={j}
                                         parentKey={x.key}
-                                        compressed={compressed}
+                                        isToolbarExpanded={isToolbarExpanded}
                                         onChangeActiveMenu={this.onChangeActiveMenu}
                                         isSubMenu={true}
-
+                                        setFilter={setFilter}
+                                        setAction={setAction}
                                     />
                                 ))
                             }
@@ -107,9 +100,10 @@ class SidebarNormal extends React.Component {
                 }
                 
 
-                <IconStyle onClick={this.onChangeSidebar} compressed={compressed} >
-                    <Icon name= {`${compressed? 'chevron right': 'chevron left' }`} size='large' />
-                </IconStyle>
+                
+                <ArrowStyle onClick={this.onToggleBar} isToolbarExpanded={isToolbarExpanded} >
+                    <Icon name= {`${isToolbarExpanded? 'chevron right': 'chevron left' }`} size='large' color='white' />
+                </ArrowStyle>
             </RootStyle>
         )
         

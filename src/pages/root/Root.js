@@ -1,10 +1,10 @@
 
-import React, {Component} from 'react'
+import React from 'react'
 import styled, { css } from 'styled-components'
 import { Switch, Route } from 'react-router-dom'
 
 import {
-    Dashboard, VehicleList, MapBasic
+    Dashboard, MapBasic
 } from '../../pages'
 import {
     SidebarNormal
@@ -15,7 +15,7 @@ const RootStyle = styled.div`
     min-height: 100vh;
     display: grid;
     grid-template-columns: 250px 7fr;
-    grid-template-rows: 60px 1fr;
+    grid-template-rows: 0px 1fr;
     grid-column-gap: 5px;
     font-family: 'Cabin', sans-serif;
     
@@ -43,7 +43,7 @@ class Root extends React.Component {
     state = {
         sidebarProps:{
             visible:true,
-            compressed:false,
+            compressed:true,
             fragments:[...sidebarFragments]
         }
     }
@@ -64,6 +64,7 @@ class Root extends React.Component {
 
     render(){
         const { visible, compressed, fragments } = this.state.sidebarProps
+
         return(
             <RootStyle compressed={compressed} visible={visible} >
                 <SidebarStyle>

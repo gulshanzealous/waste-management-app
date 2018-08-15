@@ -8,7 +8,7 @@ import {Motion, spring} from 'react-motion';
 
 const RootStyle = styled.div`
     width:100%;
-    height:60px;
+    height:45px;
     display: flex;
     align-items:center;
     cursor:pointer;
@@ -18,27 +18,24 @@ const RootStyle = styled.div`
     border-style:solid;
 
     ${props => props.isActive && css`
-        background-color: #0f68bc;
+        background-color: #074375;
         border-color:#09baf4;
     `}
     ${props => props.isSubMenu && css`
-        height:60px;
-        /* background-color: #0f68bc; */
-        padding-left:5px;
+        height:45px;
+        background-color: #074375;
         border-color:#09baf4;
     `}
 
     ${props => props.isSubMenu && css`
         &:hover{
-            background-color:#074375;
+            background-color:#0E2F4E;
         }
     `}
 
-    
-
-    ${props => props.isSubMenu && props.compressed && css`
-        height:60px;
-        background-color: #0f68bc;
+    ${props => props.isSubMenu && props.isToolbarExpanded && css`
+        height:45px;
+        background-color: #074375;
         padding-left:0px;
         border-color:#09baf4;
     `}
@@ -46,7 +43,7 @@ const RootStyle = styled.div`
 `
 
 const IconStyle = styled.div`
-    padding-left:20px;
+    padding-left:15px;
     flex:1 1 0%;
     color:#ddd;
 
@@ -65,14 +62,14 @@ const IconStyle = styled.div`
 const HeaderStyle = styled.div`
     flex:3 3 0%;
     color:#fff;
-    font-size:1.2em;
+    font-size:1em;
     color:#ddd;
 
     ${props => props.isActive && css`
         color: white;
     `}
     ${props => props.isSubMenu && css`
-        font-size:1.1em;
+        font-size:1em;
     `}
 
     &:hover{
@@ -89,15 +86,29 @@ const ArrowStyle = styled.div`
 
 `
 
-class ListHeader extends React.Component {
+class ToolHeader extends React.Component {
 
 
     onClickMenu = (e) => {
         e.preventDefault()
         // console.log(this.props.value.key)
-        const key = this.props.isSubMenu ? this.props.parentKey : this.props.value.key
+        const { isSubMenu, parentKey, fields } = this.props
+        const key = isSubMenu ? parentKey : fields.key
         this.props.onChangeActiveMenu(key)
-        this.props.history.push(this.props.value.path)
+
+        if(fields.type==='filter'){
+            return this.props.setFilter({
+                filterKey: fields.key,
+                filterValue: fields.value
+            })
+        }
+
+        this.props.setAction({
+            actionKey: fields.key,
+            actionValue: fields.value
+        })
+        
+        // this.props.history.push(this.props.value.path)
     }
 
     onToggleSubmenu = () => {
@@ -105,8 +116,8 @@ class ListHeader extends React.Component {
     }
 
     render(){
-        const { value, compressed, isActive, isSubMenu, isShowSubmenu } = this.props
-        const { header,path,icon, children } = value
+        const { fields, isToolbarExpanded, isActive, isSubMenu, isShowSubmenu } = this.props
+        const { header,path,icon, children, color } = fields
         const config = {stiffness:150, damping:20}
 
         const toCSSZoom = (scale) => ({ transform: `scale(1, ${scale})` })
@@ -121,19 +132,24 @@ class ListHeader extends React.Component {
                 value => 
 
                 <Link to={`${path}`} onClick={this.onClickMenu}  >
-                    <RootStyle isActive={isActive} isSubMenu={isSubMenu} compressed={compressed} style={toCSSZoom(value.scale)} >
-                        <IconStyle isActive={isActive}  isSubMenu={isSubMenu}  >
-                            <Icon name={icon} size='large'   />
+                    <RootStyle isActive={isActive} isSubMenu={isSubMenu} isToolbarExpanded={!isToolbarExpanded} style={toCSSZoom(value.scale)} >
+                        <IconStyle isActive={isActive}  isSubMenu={isSubMenu} >
+                            <Icon name={icon} size='large'
+                            color={color? color : 'inherit'}
+                        />
                         </IconStyle>
-                        {   !compressed &&
+                        {   isToolbarExpanded &&
                             <HeaderStyle isActive={isActive} isSubMenu={isSubMenu}  >
                                 {header}
                             </HeaderStyle>
                         }
                         {
-                            !compressed && !isSubMenu && !!children.length ?
+                            isToolbarExpanded && !isSubMenu && !!children.length ?
                             <ArrowStyle isActive={isActive} onClick={this.onToggleSubmenu} >
-                                <Icon name= {`${isActive && isShowSubmenu? 'chevron up': 'chevron down' }`} size='small' />
+                                <Icon 
+                                    name= {`${isActive && isShowSubmenu? 'close': 'add' }`} 
+                                    size='small' 
+                                />
                             </ArrowStyle>
                             :
                             <ArrowStyle/>
@@ -150,4 +166,4 @@ class ListHeader extends React.Component {
     }
 }
 
-export default withRouter(ListHeader)
+export default withRouter(ToolHeader)
