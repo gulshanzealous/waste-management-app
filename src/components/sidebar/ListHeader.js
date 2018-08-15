@@ -4,6 +4,7 @@ import styled, {css} from 'styled-components'
 import {withRouter, Link} from 'react-router-dom'
 import {Icon} from 'semantic-ui-react'
 import {Motion, spring} from 'react-motion';
+import ReactTooltip from 'react-tooltip'
 
 
 const RootStyle = styled.div`
@@ -121,7 +122,10 @@ class ListHeader extends React.Component {
                 value => 
 
                 <Link to={`${path}`} onClick={this.onClickMenu}  >
-                    <RootStyle isActive={isActive} isSubMenu={isSubMenu} compressed={compressed} style={toCSSZoom(value.scale)} >
+                    <RootStyle isActive={isActive} isSubMenu={isSubMenu} compressed={compressed} 
+                        style={toCSSZoom(value.scale)}
+                        data-tip={`${header}`} 
+                    >
                         <IconStyle isActive={isActive}  isSubMenu={isSubMenu}  >
                             <Icon name={icon} size='large'   />
                         </IconStyle>
@@ -140,6 +144,12 @@ class ListHeader extends React.Component {
                         }
 
                     </RootStyle>
+                    <ReactTooltip 
+                        place='right'
+                        type='info'
+                        effect='solid'
+                        delayShow={200}
+                    />
                 </Link>
             
             }

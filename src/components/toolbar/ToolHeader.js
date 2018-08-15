@@ -4,6 +4,7 @@ import styled, {css} from 'styled-components'
 import {withRouter, Link} from 'react-router-dom'
 import {Icon} from 'semantic-ui-react'
 import {Motion, spring} from 'react-motion';
+import ReactTooltip from 'react-tooltip'
 
 
 const RootStyle = styled.div`
@@ -102,6 +103,17 @@ class ToolHeader extends React.Component {
                 filterValue: fields.value
             })
         }
+        if(fields.type === 'toggle'){
+            return this.props.setToggle({
+                toggleKey: fields.key
+            })
+        }
+
+        if(fields.type==='list'){
+            return this.props.setList({
+                listKey: fields.key
+            })
+        }
 
         this.props.setAction({
             actionKey: fields.key,
@@ -132,7 +144,10 @@ class ToolHeader extends React.Component {
                 value => 
 
                 <Link to={`${path}`} onClick={this.onClickMenu}  >
-                    <RootStyle isActive={isActive} isSubMenu={isSubMenu} isToolbarExpanded={!isToolbarExpanded} style={toCSSZoom(value.scale)} >
+                    <RootStyle isActive={isActive} isSubMenu={isSubMenu} 
+                        isToolbarExpanded={!isToolbarExpanded} style={toCSSZoom(value.scale)} 
+                        data-tip={`${header}`}
+                    >
                         <IconStyle isActive={isActive}  isSubMenu={isSubMenu} >
                             <Icon name={icon} size='large'
                             color={color? color : 'inherit'}
@@ -156,6 +171,13 @@ class ToolHeader extends React.Component {
                         }
 
                     </RootStyle>
+                    <ReactTooltip 
+                        place='left'
+                        type='info'
+                        effect='solid'
+                        delayShow={200}
+                    />
+
                 </Link>
             
             }

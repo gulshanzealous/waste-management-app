@@ -1,28 +1,24 @@
 import React from 'react'
 import {Icon} from 'semantic-ui-react'
-import { withScriptjs, withGoogleMap, GoogleMap, Marker, MarkerClusterer, TrafficLayer } from "react-google-maps"
-import Car from './car.jpg'
+import { withScriptjs, withGoogleMap, GoogleMap, Marker, MarkerClusterer,MarkerWithLabel, TrafficLayer } from "react-google-maps"
 
+const basePath = "./images"
 
 class MapComponent extends React.Component{
 
     constructor(props){
         super(props)
         this.state={
-            vehiclesStatic: this.props.vehiclesStatic,
-            poisStatic: this.props.poisStatic,
-            geofencesStatic: this.props.geofencesStatic,
             vehicles: this.props.vehicles,
             pois: this.props.pois,
             geofences: this.props.geofences,
-            vehicleFilters: this.props.vehicleFilters,
+            trips: this.props.trips,
 
-            showPoi:false,
-            showGeofence:false,
-            showTrips:false,
-            showNightMode:false,
-            showTrafficMode:false,
-            
+            showVehicle: this.props.toggles.vehicle,
+            showPoi: this.props.toggles.poi,
+            showGeofence: this.props.toggles.geofence,
+            showTrip: this.props.toggles.trip,
+            showTraffic: this.props.toggles.traffic
         }
     }
 
@@ -31,14 +27,34 @@ class MapComponent extends React.Component{
     }
 
     componentWillReceiveProps=(nextProps)=>{
-        if(this.props.vehicleFilters !== nextProps.vehicleFilters){
-            this.adjustFilters(nextProps.vehicleFilters)
+        if(
+            this.props.vehicles !== nextProps.vehicles ||
+            this.props.pois !== nextProps.pois ||
+            this.props.geofences !== nextProps.geofences ||
+            this.props.trips !== nextProps.trips ) {
+                const { vehicles, pois, geofences, trips } = nextProps
+                this.fitBounds([...vehicles,...pois,...geofences, ...trips])
+                this.setState({
+                    vehicles, pois, geofences, trips
+                })
+        }
+
+        if(this.props.toggles !== nextProps.toggles){
+            this.setState({
+                showVehicle: nextProps.toggles.vehicle,
+                showPoi: nextProps.toggles.poi,
+                showGeofence: nextProps.toggles.geofence,
+                showTrip: nextProps.toggles.trip,
+                showTraffic: nextProps.toggles.traffic
+            })
         }
     }
 
     fitBounds = (entities) => {
-        const { vehicles, pois, geofences } = this.state
-        const allEntities = entities && entities.length ? entities : [...vehicles,...pois,...geofences]
+        console.log(this.state)
+        const { vehicles, pois, geofences, trips } = this.state
+        const allEntities = entities && entities.length ? entities : [...vehicles,...pois,...geofences, ...trips]
+
         const bounds = new window.google.maps.LatLngBounds()
         const x = allEntities.map((x, i) => {
             bounds.extend(new window.google.maps.LatLng(
@@ -49,96 +65,47 @@ class MapComponent extends React.Component{
         this.refs.map.fitBounds(bounds)
     }
 
-    adjustFilters = (vehicleFilters) => {
-        console.log(vehicleFilters)
-        const {status, vehicleNumber, poiFilters, geofenceFilters, nightMode, trafficMode} = vehicleFilters
-        const { vehicles, pois, geofences, vehiclesStatic, poisStatic, geofencesStatic,
-            showPoi, showGeofence, showTrips, showTrafficMode, showNightMode  } = this.state
-
-        const filteredVehicles = vehiclesStatic
-                                    .filter(x => {
-                                        if(status === 'all'){
-                                            return true
-                                        }
-                                        return x.status === status
-                                    })
-                                    .filter(x => {
-                                        if(vehicleNumber!=='all'){
-                                            return vehicleNumber === x.vehicleNo
-                                        }
-                                        return true
-                                    })
-        const filteredPois = poisStatic
-                                .filter(x => {
-                                    if(vehicleNumber!=='all'){
-                                        return vehicleNumber === x.vehicleNo
-                                    }
-                                    return true
-                                })
-                                .filter(x => {
-                                    if(poiFilters === 'hide'){
-                                        return false
-                                    }
-                                    return true
-                                })
-        
-        const filteredGeofences = geofencesStatic
-                                .filter(x => {
-                                    if(vehicleNumber!=='all'){
-                                        return vehicleNumber === x.vehicleNo
-                                    }
-                                    return true
-                                })
-                                .filter(x => {
-                                    if(geofenceFilters === 'hide'){
-                                        return false
-                                    }
-                                    return true
-                                })
-
-        this.fitBounds([...filteredVehicles,...filteredGeofences,...filteredPois])
-                                
-        this.setState({
-            vehicles: filteredVehicles,
-            pois: filteredPois,
-            geofences: filteredGeofences,
-            showNightMode: nightMode==='off'? false: true,
-            showTrafficMode: trafficMode==='off'? false: true
-        })
-        
+    onResize = () => {
+        this.fitBounds()
     }
 
+    
     render(){
-        const { vehicles, pois, geofences, showNightMode, showTrafficMode } = this.state
-        console.log(showTrafficMode)
-        console.log(vehicles)
+        const { vehicles, pois, geofences, trips,
+        showVehicle,showPoi,showGeofence,showTrip,showTraffic} = this.state
+        console.log(this.state)
         return(
             <GoogleMap
                 defaultZoom={8}
                 defaultCenter={{ lat: 28.592764, lng:  77.205371 }}
                 // zoom={props.zoom}
                 ref='map'
-                // onZoomChanged={props.onZoomChanged}
+                onResize={this.onResize}
             >
 
-                    {!!vehicles.length && 
+                    {!!showVehicle && !!vehicles.length && 
                         vehicles.map(x => (
                             <Marker 
                                 key={x.vehicleNo} 
                                 position={{ lat: x.coordinates[0], lng: x.coordinates[1] }}
-                                icon={<Car />}
+                                icon={{
+                                    url: require(`${basePath}/${x.vehicleType}-${x.status}.svg`),
+                                    // url: require(`${bikePath}`),
+                                    scaledSize: new window.google.maps.Size(70,70)
+                                }}
+                                
                             />
                         ))
                     }
 
-                    {!!pois.length && 
+                    {!!showPoi && !!pois.length && 
                         pois.map(x => (
                             <Marker key={x.vehicleNo} position={{ lat: x.coordinates[0], lng: x.coordinates[1] }} />
                         ))
                     }
 
                     {
-                        !!showTrafficMode &&
+                        !!showTraffic &&
                         <TrafficLayer autoUpdate />
                     }
 

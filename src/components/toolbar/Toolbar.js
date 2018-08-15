@@ -13,6 +13,8 @@ const RootStyle = styled.div`
     flex-flow:column nowrap;
     justify-content:flex-start;
     align-items:center;
+    color:#fff;
+    font-size:1.05em;
 `
 const HeaderStyle = styled.div`
     width:100%;
@@ -24,6 +26,7 @@ const ArrowStyle = styled.div`
     bottom:20px;
     color:#fff;
     left:25%;
+    color:#fff;
     ${props => props.isToolbarExpanded && css`
         left:10%;
     `}
@@ -59,7 +62,7 @@ class SidebarNormal extends React.Component {
     }
 
     render(){
-        const { isToolbarExpanded, toolbarFragments, setFilter, setAction }  = this.props
+        const { isToolbarExpanded, toolbarFragments, setFilter, setAction, setToggle, setList }  = this.props
 
         const {activeMenuKey, isShowSubmenu} = this.state
 
@@ -78,6 +81,8 @@ class SidebarNormal extends React.Component {
                                 onToggleSubmenu={this.onToggleSubmenu}
                                 setFilter={setFilter}
                                 setAction={setAction}
+                                setToggle={setToggle}
+                                setList={setList}
                             />
                             {
                                 !!(x.key === activeMenuKey) && !!x.children.length && isShowSubmenu && 
@@ -91,6 +96,8 @@ class SidebarNormal extends React.Component {
                                         isSubMenu={true}
                                         setFilter={setFilter}
                                         setAction={setAction}
+                                        setToggle={setToggle}
+                                        setList={setList}
                                     />
                                 ))
                             }
@@ -102,7 +109,7 @@ class SidebarNormal extends React.Component {
 
                 
                 <ArrowStyle onClick={this.onToggleBar} isToolbarExpanded={isToolbarExpanded} >
-                    <Icon name= {`${isToolbarExpanded? 'chevron right': 'chevron left' }`} size='large' color='white' />
+                    <Icon name= {`${isToolbarExpanded? 'chevron right': 'chevron left' }`} size='large'  />
                 </ArrowStyle>
             </RootStyle>
         )
