@@ -99,8 +99,9 @@ class ToolHeader extends React.Component {
 
         if(fields.type==='filter'){
             return this.props.setFilter({
-                filterKey: fields.key,
-                filterValue: fields.value
+                filterKey: fields.filterName,
+                filterValue: fields.value,
+                entity: fields.key
             })
         }
         if(fields.type === 'toggle'){
@@ -150,7 +151,8 @@ class ToolHeader extends React.Component {
                     >
                         <IconStyle isActive={isActive}  isSubMenu={isSubMenu} >
                             <Icon name={icon} size='large'
-                            color={color? color : 'inherit'}
+                            color={color!=='inverted' ? color : null }
+                            inverted={color==='inverted'}
                         />
                         </IconStyle>
                         {   isToolbarExpanded &&

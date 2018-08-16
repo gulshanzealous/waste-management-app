@@ -15,6 +15,7 @@ const RootStyle = styled.div`
     align-items:center;
     color:#fff;
     font-size:1.05em;
+
 `
 const HeaderStyle = styled.div`
     width:100%;

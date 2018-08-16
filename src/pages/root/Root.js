@@ -43,7 +43,7 @@ class Root extends React.Component {
     state = {
         sidebarProps:{
             visible:true,
-            compressed:true,
+            compressed:false,
             fragments:[...sidebarFragments]
         }
     }

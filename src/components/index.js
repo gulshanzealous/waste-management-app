@@ -6,3 +6,4 @@ export * from './table';
 export * from './map-component'
 export * from './toolbar'
 export * from './map-table'
+export * from './map-info-box'

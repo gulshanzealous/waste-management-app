@@ -20,6 +20,14 @@ class MapComponent extends React.Component{
             showTrip: this.props.toggles.trip,
             showTraffic: this.props.toggles.traffic
         }
+
+        this.map = null
+    }
+
+
+    onMapMounted = (ref) => {
+        console.log(ref)
+        this.map = ref
     }
 
     componentDidMount = () => {
@@ -33,7 +41,14 @@ class MapComponent extends React.Component{
             this.props.geofences !== nextProps.geofences ||
             this.props.trips !== nextProps.trips ) {
                 const { vehicles, pois, geofences, trips } = nextProps
-                this.fitBounds([...vehicles,...pois,...geofences, ...trips])
+                let {lastFilterEntity} = nextProps
+                let entitiesForBounds = []
+                if(lastFilterEntity === 'all'){
+                    entitiesForBounds = [...vehicles,...pois,...geofences, ...trips]
+                }else{
+                    entitiesForBounds = nextProps[lastFilterEntity]
+                }
+                this.fitBounds([...entitiesForBounds])
                 this.setState({
                     vehicles, pois, geofences, trips
                 })
@@ -51,7 +66,6 @@ class MapComponent extends React.Component{
     }
 
     fitBounds = (entities) => {
-        console.log(this.state)
         const { vehicles, pois, geofences, trips } = this.state
         const allEntities = entities && entities.length ? entities : [...vehicles,...pois,...geofences, ...trips]
 
@@ -62,7 +76,7 @@ class MapComponent extends React.Component{
                 x.coordinates[1]
             ));
         });
-        this.refs.map.fitBounds(bounds)
+        this.map.fitBounds(bounds)
     }
 
     onResize = () => {
@@ -73,20 +87,30 @@ class MapComponent extends React.Component{
     render(){
         const { vehicles, pois, geofences, trips,
         showVehicle,showPoi,showGeofence,showTrip,showTraffic} = this.state
-        console.log(this.state)
+        console.log(this.props.zoom)
         return(
             <GoogleMap
-                defaultZoom={8}
                 defaultCenter={{ lat: 28.592764, lng:  77.205371 }}
-                // zoom={props.zoom}
-                ref='map'
+                zoom={this.props.zoom}
+                ref={this.onMapMounted}
                 onResize={this.onResize}
+                defaultOptions={{
+                    // minZoom:4,
+                    maxZoom:18
+                    // fullscreenControl: false,
+                    // zoomControl: false,
+                    // streetViewControl: false,
+                    // scaleControl: true,
+                    // mapTypeControl: true,
+                    // mapTypeControlOptions,
+                    // styles: [...administrative, ...landscape, ...poi, ...road, ...transit, ...water]
+                  }}
             >
 
                     {!!showVehicle && !!vehicles.length && 
-                        vehicles.map(x => (
+                        vehicles.map((x,i) => (
                             <Marker 
-                                key={x.vehicleNo} 
+                                key={i} 
                                 position={{ lat: x.coordinates[0], lng: x.coordinates[1] }}
                                 icon={{
                                     url: require(`${basePath}/${x.vehicleType}-${x.status}.svg`),
@@ -99,8 +123,8 @@ class MapComponent extends React.Component{
                     }
 
                     {!!showPoi && !!pois.length && 
-                        pois.map(x => (
-                            <Marker key={x.vehicleNo} position={{ lat: x.coordinates[0], lng: x.coordinates[1] }} />
+                        pois.map((x,i) => (
+                            <Marker key={i} position={{ lat: x.coordinates[0], lng: x.coordinates[1] }} />
                         ))
                     }
 

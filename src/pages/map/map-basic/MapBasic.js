@@ -1,6 +1,6 @@
 import React from 'react'
 import styled, {css} from 'styled-components'
-import {MapComponent, Toolbar, MapTable} from '../../../components'
+import {MapComponent, Toolbar, MapTable, MapInfoBox} from '../../../components'
 
 const RootStyle = styled.div`
     width:100%;
@@ -36,11 +36,22 @@ const ListStyle = styled.div`
     `} */
 `
 
+const InfoBoxStyle = styled.div`
+    min-width:300px;
+    height:100vh;
+    background-color:transparent;
+    position:absolute;
+    left:70px;
+    top:0px;
+    border-radius:0px 10px 10px 0px;
+    display:grid;
+`
 
 class MapBasic extends React.Component {
 
     state = {
         isToolbarExpanded:false,
+        mapZoom:8,
 
         vehiclesStatic:vehiclesSeed,
         poisStatic:poisSeed,
@@ -53,11 +64,18 @@ class MapBasic extends React.Component {
         trips:tripsSeed,
 
         filters:{
-            status:'all', // running, idle, stopped, inactive
-            poi:'all', // all,hide, searched
-            geofence:'all', // all,hide
-            trip:'all', // all, hide
+            vehicles:{
+                field:'status', // running, idle, stopped, inactive
+                value:'all'
+            },
+            trips:{
+                field:'tripStatus',
+                value:'all'
+            },
+            // poi:'all', // all,hide, searched
+            // geofence:'all', // all,hide
             vehicleNumber:'all', // all, vehicleNumber
+            lastFilterEntity:'all' // vehicles,pois,geofences,trips (for setbounds)
         },
         toggles:{
             vehicle:true,
@@ -75,13 +93,28 @@ class MapBasic extends React.Component {
                 'pois':['vehicleNumber','poiName','coordinates'],
                 'geofences':['vehicleNumber','geofenceName','coordinates'],
                 'trips':['vehicleNumber','tripStatus','coordinates']
-            }
+            },
+            selectedEntity:null
         },
+
         actions:{
             status:'running', // view-list, search
             poisActions:'', // view-list,create,edit,delete
         },
-
+        infoBox: //null
+        {
+            
+            record: vehiclesSeed[0] ,
+            entityName: 'vehicles',
+            entityIdentifierKey: 'vehicleIdentifier',
+            entityIdentifierValue: 'DL11SH6952',
+            allFields:{
+                'vehicles':['vehicleNumber','status','coordinates'],
+                'pois':['vehicleNumber','poiName','coordinates'],
+                'geofences':['vehicleNumber','geofenceName','coordinates'],
+                'trips':['vehicleNumber','tripStatus','coordinates']
+            },
+        }
 
 
     }
@@ -92,23 +125,49 @@ class MapBasic extends React.Component {
         })
     }
 
-    setFilter = ({ filterKey, filterValue }) => {
-        const { vehicles, pois, geofences, vehiclesStatic, poisStatic, geofencesStatic,
-            showPoi, showGeofence, showTrips, showTrafficModefilters } = this.state
+    setFilter = ({ filterKey, filterValue, entity='all', fromTable }) => {
         
-        const allFilters = {
-            ...this.state.filters,
-            [filterKey] : filterValue
+        let allFilters = {}
+        if(fromTable===true || entity==='pois' || entity==='geofences'){
+            allFilters = {
+                vehicleNumber:filterValue,
+                lastFilterEntity: entity,
+                vehicles:{
+                    value:'all'
+                },
+                trips:{
+                    value:'all'
+                }
+            }
+        } else {
+            allFilters = {
+                ...this.state.filters,
+                [entity] : { field : filterKey, value: filterValue },
+                vehicleNumber: 'all',
+                lastFilterEntity: 'all'
+            }
         }
-        const { status, vehicleNumber, poi:poiFilters,geofence:geofenceFilters,trip:tripFilters, trafficMode } = allFilters
+        
+        // console.log(allFilters)
+        const { vehicles: vehicleFilters, trips:tripFilters, vehicleNumber } = allFilters
 
-        const { filteredVehicles, filteredPois, filteredGeofences, filteredTrips } = 
-        this.extractDataforVehicles({ status, vehicleNumber })
+
+
+        const filteredData = this.extractDataforVehicles({ vehicleFilters, tripFilters, vehicleNumber })
+        const { vehicles, pois, geofences, trips } = filteredData
+
+        // const calcZoom = filteredData[entity] && filteredData[entity].length === 1 ? 18 : 12
+        // console.log(calcZoom)
+
         this.setState({
-            vehicles:filteredVehicles,
-            pois: filteredPois,
-            geofences: filteredGeofences,
-            trips: filteredTrips
+            vehicles,
+            pois,
+            geofences,
+            trips,
+            // mapZoom:calcZoom,
+            filters:{
+                ...allFilters
+            }
         })
     }
 
@@ -123,7 +182,6 @@ class MapBasic extends React.Component {
     }
  
     setList = ({ listKey }) => {
-        console.log(listKey)
         this.setState((prevState)=>{
             return {
                 listView:{
@@ -141,19 +199,35 @@ class MapBasic extends React.Component {
 
         // })
     }
- 
 
-    extractDataforVehicles = (vehicleFilters) => {
+    showInfoBox = ({ entityName, entityIdentifierKey, entityIdentifierValue }) => {
+        const record = this.state[entityName]
+                        .filter(x => x[entityIdentifierKey] === entityIdentifierValue)[0]
+        if(!record){
+            return this.setState({
+                infoBox:null
+            })
+        }
+        this.setState({
+            infoBox:{
+                record,
+                entityName,
+                entityIdentifierKey,
+                entityIdentifierValue
+            }
+        })
+    }
+
+
+    extractDataforVehicles = ({vehicleFilters, tripFilters, vehicleNumber}) => {
         const { vehiclesStatic, poisStatic, geofencesStatic, tripsStatic } = this.state
         
-        const {status, vehicleNumber,poi:poiFilters, geofenceFilters, trafficMode} = vehicleFilters
-
-        const filteredVehicles = vehiclesStatic
+        const vehicles = vehiclesStatic
                                     .filter(x => {
-                                        if(status === 'all'){
+                                        if(vehicleFilters.value === 'all'){
                                             return true
                                         }
-                                        return x.status === status
+                                        return x.status === vehicleFilters.value
                                     })
                                     .filter(x => {
                                         if(vehicleNumber!=='all'){
@@ -161,7 +235,7 @@ class MapBasic extends React.Component {
                                         }
                                         return true
                                     })
-        const filteredPois = poisStatic
+        const pois = poisStatic
                                 .filter(x => {
                                     if(vehicleNumber!=='all'){
                                         return vehicleNumber === x.vehicleNumber
@@ -169,14 +243,19 @@ class MapBasic extends React.Component {
                                     return true
                                 })
         
-        const filteredGeofences = geofencesStatic
+        const geofences = geofencesStatic
                                 .filter(x => {
                                     if(vehicleNumber!=='all'){
                                         return vehicleNumber === x.vehicleNumber
                                     }
                                     return true
                                 })
-        const filteredTrips = tripsStatic
+        const trips = tripsStatic.filter(x => {
+                                        if(tripFilters.value === 'all'){
+                                            return true
+                                        }
+                                        return x.tripStatus === tripFilters.value
+                                    })
                                 .filter(x => {
                                     if(vehicleNumber!=='all'){
                                         return vehicleNumber === x.vehicleNumber
@@ -185,15 +264,15 @@ class MapBasic extends React.Component {
                                 })
                                 
         return {
-            filteredVehicles, filteredPois, filteredGeofences, filteredTrips
+            vehicles, pois, geofences, trips
         }
         
     }
 
     render(){
         const {isToolbarExpanded, vehicles, pois, geofences, trips,
-        toggles, listView } = this.state
-
+        toggles, listView, infoBox, mapZoom } = this.state
+        const {entity:lastFilterEntity} = this.state.listView
         return(
             <RootStyle>
                 <MapComponent 
@@ -202,11 +281,14 @@ class MapBasic extends React.Component {
                     loadingElement={<div style={{ height: `100%`, width:'100%' }} />}
                     containerElement={<div style={{ height: `100%` }} />}
                     mapElement={<div style={{ height: `100%`, width:'100%' }} />}
+                    // zoom={mapZoom}
 
                     vehicles={vehicles}
                     pois={pois}
                     geofences={geofences}
                     trips={trips}
+
+                    lastFilterEntity={lastFilterEntity}
 
                     toggles={toggles}
                 />
@@ -229,11 +311,24 @@ class MapBasic extends React.Component {
                             rawData={this.state[listView.entity]}
                             staticData={this.state[`${listView.entity}Static`]}
                             fields={listView.allFields[listView.entity]}
+                            showInfoBox={this.showInfoBox}
                             entity={listView.entity}
                             setList={this.setList}
                             setFilter={this.setFilter}
                         />
                     </ListStyle>
+                }
+
+                {
+                    infoBox && 
+                    <InfoBoxStyle>
+                        <MapInfoBox
+                            record={infoBox.record}
+                            entityName={infoBox.entityName}
+                            entityIdentifierKey={infoBox.entityIdentifierKey}
+                            entityIdentifierValue={infoBox.entityIdentifierValue}
+                        />
+                    </InfoBoxStyle>
                 }
 
             </RootStyle>
@@ -247,16 +342,18 @@ export default MapBasic
 const toolbarFragments = [
     {
         header:'All Vehicles',
-        key:'status',
+        filterName:'status',
+        key:'vehicles',
         value:'all',
         icon:'circle',
-        color:'white',
+        color:'inverted',
         type:'filter',
         children:[
             {
                 header:'Running Vehicles',
                 type:'filter',
-                key:'status',
+                filterName:'status',
+                key:'vehicles',
                 color:'green',
                 value:'running',
                 icon:'circle',
@@ -264,7 +361,8 @@ const toolbarFragments = [
             {
                 header:'Idle Vehicles',
                 type:'filter',
-                key:'status',
+                filterName:'status',
+                key:'vehicles',
                 color:'orange',
                 value:'idle',
                 icon:'circle',
@@ -272,7 +370,8 @@ const toolbarFragments = [
             {
                 header:'Stopped Vehicles',
                 type:'filter',
-                key:'status',
+                filterName:'status',
+                key:'vehicles',
                 color:'red',
                 value:'stopped',
                 icon:'circle',
@@ -280,7 +379,8 @@ const toolbarFragments = [
             {
                 header:'Inactive Vehicles',
                 type:'filter',
-                key:'status',
+                filterName:'status',
+                key:'vehicles',
                 color:'grey',
                 value:'inactive',
                 icon:'circle',
@@ -310,16 +410,18 @@ const toolbarFragments = [
     },
     {
         header:'All Trips',
-        key:'trip',
+        key:'trips',
+        filterName:'tripStatus',
         value:'all',
         type:'filter',
         icon:'rocket',
-        color:'white',
+        color:'inverted',
         children:[
             {
                 header:'Ongoing Trips',
                 type:'filter',
-                key:'trip',
+                key:'trips',
+                filterName:'tripStatus',
                 color:'green',
                 value:'ongoing',
                 icon:'rocket',
@@ -327,7 +429,8 @@ const toolbarFragments = [
             {
                 header:'Finished Trips',
                 type:'filter',
-                key:'trip',
+                key:'trips',
+                filterName:'tripStatus',
                 color:'orange',
                 value:'finished',
                 icon:'rocket',
@@ -335,7 +438,8 @@ const toolbarFragments = [
             {
                 header:'Planned Trips',
                 type:'filter',
-                key:'trip',
+                key:'trips',
+                filterName:'tripStatus',
                 color:'blue',
                 value:'planned',
                 icon:'rocket',
@@ -343,7 +447,8 @@ const toolbarFragments = [
             {
                 header:'Abandoned Trips',
                 type:'filter',
-                key:'trip',
+                key:'trips',
+                filterName:'tripStatus',
                 color:'red',
                 value:'abandoned',
                 icon:'rocket',
@@ -373,11 +478,11 @@ const toolbarFragments = [
     },
     {
         header:'Point of interest',
-        key:'poi',
+        key:'pois',
         value:'all',
         type:'filter',
         icon:'point',
-        color:'white',
+        color:'inverted',
         children:[
             {
                 header:'Toggle POIs',
@@ -418,11 +523,11 @@ const toolbarFragments = [
     },
     {
         header:'Geofences',
-        key:'geofence',
+        key:'geofences',
         value:'all',
         type:'filter',
         icon:'map signs',
-        color:'white',
+        color:'inverted',
         children:[
             {
                 header:'Toggle Geofences',
@@ -467,7 +572,7 @@ const toolbarFragments = [
         value:'toggle',
         type:'toggle',
         icon:'road',
-        color:'white',
+        color:'inverted',
         children:[]
     },
     

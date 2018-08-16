@@ -114,7 +114,14 @@ class MapTable extends React.Component {
         const { vehicleNumber } = x
         this.props.setFilter({
             filterKey:'vehicleNumber',
-            filterValue: vehicleNumber
+            filterValue: vehicleNumber,
+            entity: this.props.entity,
+            fromTable:true
+        })
+        this.props.showInfoBox({
+            entityName: this.props.entity,
+            entityIdentifierKey: 'vehicleNumber',
+            entityIdentifierValue: vehicleNumber
         })
     }
 
@@ -150,7 +157,7 @@ class MapTable extends React.Component {
                             return x.vehicleNumber.toLowerCase().includes(searchString)
                         })
 
-        console.log(data)
+        // console.log(data)
 
         const config = {stiffness:850, damping:50}
         const toCSSZoom = (scale) => ({ transform: `scale(1, ${scale})` })
