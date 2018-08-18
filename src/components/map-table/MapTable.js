@@ -1,7 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
 import {Icon, Input} from 'semantic-ui-react'
-import {Motion, spring} from 'react-motion';
 
 const RootStyle = styled.div`
     width:100%;
@@ -95,6 +94,12 @@ class MapTable extends React.Component {
 
     onClickClose = () => {
         this.props.setList({ listKey: this.props.entity })
+        this.props.showInfoBox({
+            entityName: null,
+            entityIdentifierKey: null,
+            entityIdentifierValue: null,
+            infoBoxVisible:false
+        })
     }
 
     onClickSearch = () => {
@@ -121,7 +126,8 @@ class MapTable extends React.Component {
         this.props.showInfoBox({
             entityName: this.props.entity,
             entityIdentifierKey: 'vehicleNumber',
-            entityIdentifierValue: vehicleNumber
+            entityIdentifierValue: vehicleNumber,
+            infoBoxVisible:true
         })
     }
 
@@ -134,7 +140,7 @@ class MapTable extends React.Component {
 
     render(){
         const {searchMode, searchString} = this.state
-        const { staticData, fields, entity, setList } = this.props
+        const { staticData, fields, entity } = this.props
         const data = [...staticData,...staticData,...staticData,...staticData]
                         .map(x => {
                             if(x.coordinates){
@@ -159,17 +165,9 @@ class MapTable extends React.Component {
 
         // console.log(data)
 
-        const config = {stiffness:850, damping:50}
-        const toCSSZoom = (scale) => ({ transform: `scale(1, ${scale})` })
 
         return(
-            <Motion  
-                defaultStyle={{scale: 0 }} 
-                style={{scale: spring(1, config )}}
-            >
-            {
-            value => 
-            <RootStyle style={toCSSZoom(value.scale)}>
+            <RootStyle >
                 <HeaderStyle >
                     {
                         searchMode?
@@ -219,9 +217,6 @@ class MapTable extends React.Component {
                 </BodyStyle>
 
             </RootStyle>
-            }
-
-            </Motion>
             
         )
     }

@@ -1,6 +1,6 @@
 import React from 'react'
-import {Icon} from 'semantic-ui-react'
-import { withScriptjs, withGoogleMap, GoogleMap, Marker, MarkerClusterer,MarkerWithLabel, TrafficLayer } from "react-google-maps"
+// import {Icon} from 'semantic-ui-react'
+import { withScriptjs, withGoogleMap, GoogleMap, Marker, TrafficLayer } from "react-google-maps"
 
 const basePath = "./images"
 
@@ -24,9 +24,8 @@ class MapComponent extends React.Component{
         this.map = null
     }
 
-
     onMapMounted = (ref) => {
-        console.log(ref)
+        // console.log(ref)
         this.map = ref
     }
 
@@ -70,7 +69,7 @@ class MapComponent extends React.Component{
         const allEntities = entities && entities.length ? entities : [...vehicles,...pois,...geofences, ...trips]
 
         const bounds = new window.google.maps.LatLngBounds()
-        const x = allEntities.map((x, i) => {
+        allEntities.forEach((x) => {
             bounds.extend(new window.google.maps.LatLng(
                 x.coordinates[0],
                 x.coordinates[1]
@@ -83,19 +82,29 @@ class MapComponent extends React.Component{
         this.fitBounds()
     }
 
+    onClickVehicle = (vehicle) => {
+        this.props.setSelectedVehicle(vehicle)
+    }
+
+    onClickGeofence = (geofence) => {
+        this.props.setSelectedGeofence(geofence)
+    }
+
+    onClickPoi = (poi) => {
+        this.props.setSelectedPoi(poi)
+    }
     
     render(){
         const { vehicles, pois, geofences, trips,
         showVehicle,showPoi,showGeofence,showTrip,showTraffic} = this.state
-        console.log(this.props.zoom)
         return(
             <GoogleMap
                 defaultCenter={{ lat: 28.592764, lng:  77.205371 }}
-                zoom={this.props.zoom}
+                // zoom={this.props.zoom}
                 ref={this.onMapMounted}
                 onResize={this.onResize}
                 defaultOptions={{
-                    // minZoom:4,
+                    minZoom:6,
                     maxZoom:18
                     // fullscreenControl: false,
                     // zoomControl: false,
@@ -117,14 +126,37 @@ class MapComponent extends React.Component{
                                     // url: require(`${bikePath}`),
                                     scaledSize: new window.google.maps.Size(70,70)
                                 }}
-                                
+                                onClick={this.onClickVehicle.bind(this,x)}
                             />
+                        ))
+                    }
+
+                    {!!showTrip && !!trips.length &&
+                        trips.map((x,i) => (
+                            <Marker key={i} position={{ lat: x.coordinates[0], lng: x.coordinates[1] }}
+                             />
                         ))
                     }
 
                     {!!showPoi && !!pois.length && 
                         pois.map((x,i) => (
-                            <Marker key={i} position={{ lat: x.coordinates[0], lng: x.coordinates[1] }} />
+                            <Marker 
+                            key={i} 
+                            position={{ lat: x.coordinates[0], lng: x.coordinates[1] }}
+                            onClick={this.onClickPoi.bind(this,x)}
+
+                             />
+                        ))
+                    }
+
+                    {!!showGeofence && !!geofences.length &&
+                        geofences.map((x,i) => (
+                            <Marker 
+                            key={i} 
+                            position={{ lat: x.coordinates[0], lng: x.coordinates[1] }} 
+                            onClick={this.onClickGeofence.bind(this,x)}
+
+                            />
                         ))
                     }
 

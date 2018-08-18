@@ -8,7 +8,8 @@ import ReactTooltip from 'react-tooltip'
 
 
 const RootStyle = styled.div`
-    width:100%;
+    width:0%;
+    opacity:0;
     height:60px;
     display: flex;
     align-items:center;
@@ -17,16 +18,19 @@ const RootStyle = styled.div`
     border-color:#0E2F4E;
     border-width:0px 0px 0px 5px;
     border-style:solid;
+    z-index:100;
 
     ${props => props.isActive && css`
         background-color: #0f68bc;
         border-color:#09baf4;
+        width:100%;
     `}
     ${props => props.isSubMenu && css`
         height:60px;
         /* background-color: #0f68bc; */
         padding-left:5px;
         border-color:#09baf4;
+        width:100%;
     `}
 
     ${props => props.isSubMenu && css`
@@ -92,6 +96,19 @@ const ArrowStyle = styled.div`
 
 class ListHeader extends React.Component {
 
+    state = {
+        sidebarWidthBefore:0,
+        sidebarWidthAfter:100
+    }
+
+    componentWillReceiveProps = (nextProps) => {
+        // if(nextProps.compressed === true){
+        //     this.setState({
+        //         sidebarWidthBefore: this.state.sidebarWidthAfter,
+        //         sidebarWidthAfter: this.state.sidebarWidthBefore
+        //     })
+        // }
+    }
 
     onClickMenu = (e) => {
         e.preventDefault()
@@ -110,21 +127,32 @@ class ListHeader extends React.Component {
         const { header,path,icon, children } = value
         const config = {stiffness:150, damping:20}
 
-        const toCSSZoom = (scale) => ({ transform: `scale(1, ${scale})` })
-
         // console.log(header)
         return(
             <Motion  
-                defaultStyle={{scale: 0 }} 
-                style={{scale: spring(1, config )}}
+                defaultStyle={{
+                    scale: 0, 
+                    opacity:0,
+                    width:this.state.sidebarWidthBefore
+                }}
+                style={{
+                    scale: spring(1, config ),
+                    opacity: spring(1),
+                    width:spring(this.state.sidebarWidthAfter)
+                }}
             >
             {
                 value => 
 
                 <Link to={`${path}`} onClick={this.onClickMenu}  >
                     <RootStyle isActive={isActive} isSubMenu={isSubMenu} compressed={compressed} 
-                        style={toCSSZoom(value.scale)}
-                        data-tip={`${header}`} 
+                        style={{ 
+                            transform: `scale(1, ${value.scale})`, 
+                            opacity: value.opacity,
+                            width: `${value.width}%`
+                        }}
+                        data-tip={ compressed? `${header}` : null } 
+                        data-offset= { compressed? "{'left': 0}" : '' } 
                     >
                         <IconStyle isActive={isActive}  isSubMenu={isSubMenu}  >
                             <Icon name={icon} size='large'   />
@@ -144,12 +172,12 @@ class ListHeader extends React.Component {
                         }
 
                     </RootStyle>
-                    <ReactTooltip 
+                    {!!compressed && <ReactTooltip 
                         place='right'
                         type='info'
                         effect='solid'
-                        delayShow={200}
-                    />
+                        delayShow={0}
+                    />}
                 </Link>
             
             }

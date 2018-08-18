@@ -1,6 +1,7 @@
 import React from 'react'
 import styled, {css} from 'styled-components'
 import {MapComponent, Toolbar, MapTable, MapInfoBox} from '../../../components'
+import {Motion, spring} from 'react-motion';
 
 const RootStyle = styled.div`
     width:100%;
@@ -17,13 +18,19 @@ const ActionbarStyle = styled.div`
     border-radius:10px 0px 0px 10px;
     cursor:pointer;
     z-index:20;
+    /* border-color:#fff;
+    border-width:0px 0px 1px 1px;
+    border-style:solid; */
+    box-shadow: -1px 1px 1px 1px rgba(170,170,170,1);
+
+
     ${props => props.isToolbarExpanded && css`
         width:240px;
     `}
 `
 const ListStyle = styled.div`
     min-height:700px;
-    width:450px;
+    width:0px;
     position:absolute;
     right:0;
     top:100px;
@@ -37,7 +44,6 @@ const ListStyle = styled.div`
 `
 
 const InfoBoxStyle = styled.div`
-    min-width:300px;
     height:100vh;
     background-color:transparent;
     position:absolute;
@@ -51,7 +57,7 @@ class MapBasic extends React.Component {
 
     state = {
         isToolbarExpanded:false,
-        mapZoom:8,
+        // mapZoom:8,
 
         vehiclesStatic:vehiclesSeed,
         poisStatic:poisSeed,
@@ -94,28 +100,42 @@ class MapBasic extends React.Component {
                 'geofences':['vehicleNumber','geofenceName','coordinates'],
                 'trips':['vehicleNumber','tripStatus','coordinates']
             },
-            selectedEntity:null
+            selectedEntity:null,
+            listWidthBefore:0,
+            listWidthAfter:0
         },
 
         actions:{
             status:'running', // view-list, search
             poisActions:'', // view-list,create,edit,delete
         },
-        infoBox: //null
-        {
-            
-            record: vehiclesSeed[0] ,
-            entityName: 'vehicles',
-            entityIdentifierKey: 'vehicleIdentifier',
-            entityIdentifierValue: 'DL11SH6952',
+        infoBox: {
+            record:null,
+            entityName:null,
+            entityIdentifierKey:null,
+            entityIdentifierValue:null,
             allFields:{
-                'vehicles':['vehicleNumber','status','coordinates'],
+                'vehicles':['vehicleNumber','status','coordinates','fuel','vehicleType'],
                 'pois':['vehicleNumber','poiName','coordinates'],
                 'geofences':['vehicleNumber','geofenceName','coordinates'],
                 'trips':['vehicleNumber','tripStatus','coordinates']
             },
-        }
+        },
 
+
+    }
+
+    componentDidMount = () => {
+
+    }
+
+    componentWillUnmount = () => {
+        this.setState({
+            listView:{
+                ...this.state.listView,
+                visible:false
+            }
+        })
 
     }
 
@@ -183,12 +203,27 @@ class MapBasic extends React.Component {
  
     setList = ({ listKey }) => {
         this.setState((prevState)=>{
+            const isVisible = prevState.listView.entity === listKey ? !prevState.listView.visible : true
+            const infoBoxState = isVisible? 
+                this.state.infoBox :
+                {
+
+                    ...this.state.infoBox,
+                    record:null,
+                    entityName:null,
+                    entityIdentifierKey:null,
+                    entityIdentifierValue:null
+                }
+
             return {
                 listView:{
                     ...prevState.listView,
                     entity:listKey,
-                    visible: prevState.listView.entity === listKey ? !prevState.listView.visible : true
-                }
+                    visible: isVisible,
+                    listWidthBefore: isVisible? 0 : 450,
+                    listWidthAfter: isVisible? 450 : 0
+                },
+                infoBox: infoBoxState
             }
         })
     }
@@ -200,16 +235,60 @@ class MapBasic extends React.Component {
         // })
     }
 
-    showInfoBox = ({ entityName, entityIdentifierKey, entityIdentifierValue }) => {
-        const record = this.state[entityName]
+    showInfoBox = ({ entityName, entityIdentifierKey, entityIdentifierValue, infoBoxVisible }) => {
+        // console.log(entityName)
+        // console.log(entityIdentifierKey)
+        // console.log(entityIdentifierValue)
+
+        if(infoBoxVisible === false){
+            return this.setState({
+                infoBox:{
+                    ...this.state.infoBox,
+                    record:null,
+                    entityName:null,
+                    entityIdentifierKey:null,
+                    entityIdentifierValue:null
+                },
+                vehicles:vehiclesSeed,
+                pois:poisSeed,
+                geofences:geofencesSeed,
+                trips:tripsSeed,        
+            })
+        }
+
+        if(this.state.infoBox && 
+            this.state.infoBox.entityName === entityName &&
+            this.state.infoBox.entityIdentifierKey === entityIdentifierKey &&
+            this.state.infoBox.entityIdentifierValue === entityIdentifierValue
+        ){
+            return this.setState({
+                infoBox:{
+                    ...this.state.infoBox,
+                    record:null,
+                    entityName:null,
+                    entityIdentifierKey:null,
+                    entityIdentifierValue:null
+                }
+            })
+        }
+        
+        const record = this.state[`${entityName}Static`]
                         .filter(x => x[entityIdentifierKey] === entityIdentifierValue)[0]
         if(!record){
             return this.setState({
-                infoBox:null
+                infoBox:{
+                    ...this.state.infoBox,
+                    record:null,
+                    entityName:null,
+                    entityIdentifierKey:null,
+                    entityIdentifierValue:null
+                }
             })
         }
+
         this.setState({
             infoBox:{
+                ...this.state.infoBox,
                 record,
                 entityName,
                 entityIdentifierKey,
@@ -218,6 +297,50 @@ class MapBasic extends React.Component {
         })
     }
 
+    setSelectedVehicle = (vehicle) => {
+        this.setState((prevState)=>{
+            return {
+                vehicles: [vehicle]
+            }
+        })
+        this.showInfoBox({
+            entityName: 'vehicles',
+            entityIdentifierKey: 'vehicleNumber',
+            entityIdentifierValue: vehicle.vehicleNumber,
+            infoBoxVisible:true
+        })
+    }
+
+    setSelectedPoi = (poi) => {
+        console.log(poi)
+        this.setState((prevState)=>{
+            return {
+                pois: [poi]
+            }
+        })
+        this.showInfoBox({
+            entityName: 'pois',
+            entityIdentifierKey: 'vehicleNumber',
+            entityIdentifierValue: poi.vehicleNumber,
+            infoBoxVisible:true
+        })
+    }
+    
+    setSelectedGeofence = (geofence) => {
+        console.log(geofence)
+        this.setState((prevState)=>{
+            return {
+                geofences: [geofence]
+            }
+        })
+        this.showInfoBox({
+            entityName: 'geofences',
+            entityIdentifierKey: 'vehicleNumber',
+            entityIdentifierValue: geofence.vehicleNumber,
+            infoBoxVisible:true
+        })
+    }
+    
 
     extractDataforVehicles = ({vehicleFilters, tripFilters, vehicleNumber}) => {
         const { vehiclesStatic, poisStatic, geofencesStatic, tripsStatic } = this.state
@@ -271,14 +394,37 @@ class MapBasic extends React.Component {
 
     render(){
         const {isToolbarExpanded, vehicles, pois, geofences, trips,
-        toggles, listView, infoBox, mapZoom } = this.state
+        toggles, listView, infoBox } = this.state
         const {entity:lastFilterEntity} = this.state.listView
+        const config = {stiffness:850, damping:50}
+
         return(
+            <Motion
+                defaultStyle={{
+                    width: this.state.listView.listWidthBefore
+                }}
+                style={{
+                    width:spring(this.state.listView.listWidthAfter)
+                }}
+            >
+            {
+            value => 
             <RootStyle>
                 <MapComponent 
                     isMarkerShown 
                     googleMapURL="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsfg3spr8oSlXBAi93MSBe_ZFg1f9Ycg0&v=3.exp&libraries=geometry,drawing,places"
-                    loadingElement={<div style={{ height: `100%`, width:'100%' }} />}
+                    loadingElement={
+                        <img 
+                            src={require('../logo.gif')}
+                            style={{ 
+                                height:'50px',
+                                width:'50px',
+                                position:'absolute',
+                                top:'35%',
+                                left:'48%'
+                            }} 
+                        />
+                    }
                     containerElement={<div style={{ height: `100%` }} />}
                     mapElement={<div style={{ height: `100%`, width:'100%' }} />}
                     // zoom={mapZoom}
@@ -291,6 +437,10 @@ class MapBasic extends React.Component {
                     lastFilterEntity={lastFilterEntity}
 
                     toggles={toggles}
+
+                    setSelectedVehicle={this.setSelectedVehicle}
+                    setSelectedPoi={this.setSelectedPoi}
+                    setSelectedGeofence={this.setSelectedGeofence}
                 />
 
                 <ActionbarStyle isToolbarExpanded={isToolbarExpanded} >
@@ -305,8 +455,9 @@ class MapBasic extends React.Component {
                     />
                 </ActionbarStyle>
 
-                {   listView.visible &&
-                    <ListStyle >
+                {   
+                    // listView.visible &&
+                    <ListStyle style= {{ width: `${value.width}px` }} >
                         <MapTable 
                             rawData={this.state[listView.entity]}
                             staticData={this.state[`${listView.entity}Static`]}
@@ -320,18 +471,25 @@ class MapBasic extends React.Component {
                 }
 
                 {
-                    infoBox && 
+                    // infoBox && 
                     <InfoBoxStyle>
                         <MapInfoBox
                             record={infoBox.record}
                             entityName={infoBox.entityName}
                             entityIdentifierKey={infoBox.entityIdentifierKey}
                             entityIdentifierValue={infoBox.entityIdentifierValue}
+                            onChangeSidebar={this.props.onChangeSidebar}
+                            allFields={infoBox.allFields[infoBox.entityName]}
+                            showInfoBox={this.showInfoBox}
                         />
                     </InfoBoxStyle>
                 }
 
             </RootStyle>
+            }
+
+            </Motion>
+            
         )
     }
 }
@@ -643,13 +801,13 @@ const poisSeed = [
 const geofencesSeed = [
     
     {
-        coordinates:[28.662130, 77.446014],
-        poiName:'Kamla nagar market',
+        coordinates:[28.662178, 77.44674],
+        geofenceName:'Kamla nagar market',
         vehicleNumber:'HR35BC7355',
     },
     {
-        coordinates:[28.623010, 77.390599],
-        poiName:'Indirapuram',
+        coordinates:[28.623015, 77.390592],
+        geofenceName:'Indirapuram',
         vehicleNumber:'HR27PT0235',
     },
 ]

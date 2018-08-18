@@ -31,10 +31,13 @@ const RootStyle = styled.div`
 const SidebarStyle = styled.div`
     grid-row:2/3;
     grid-column:1/2;
+    z-index:100;
+    background-color:#EBEAE3;
+
 `
 const MainAppStyle = styled.div`
     grid-column:2/3;
-    background-color:#0f0;
+    background-color:#fff;
     grid-row:2/3;
 `
 
@@ -43,7 +46,7 @@ class Root extends React.Component {
     state = {
         sidebarProps:{
             visible:true,
-            compressed:false,
+            compressed:true,
             fragments:[...sidebarFragments]
         }
     }
@@ -66,6 +69,7 @@ class Root extends React.Component {
         const { visible, compressed, fragments } = this.state.sidebarProps
 
         return(
+            
             <RootStyle compressed={compressed} visible={visible} >
                 <SidebarStyle>
                     <SidebarNormal
@@ -78,7 +82,14 @@ class Root extends React.Component {
                 <MainAppStyle>
                     <Switch>
                         <Route path='/dashboard' component={Dashboard} />
-                        <Route path='/map-view' component={MapBasic} />
+                        <Route 
+                            path='/map-view' 
+                            render={(props)=>{
+                                return <MapBasic {...props} 
+                                        onChangeSidebar={this.onChangeSidebar} 
+                                    />
+                            }}
+                        />
                     </Switch>
                 </MainAppStyle>
             </RootStyle>

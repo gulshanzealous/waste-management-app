@@ -8,7 +8,8 @@ import ReactTooltip from 'react-tooltip'
 
 
 const RootStyle = styled.div`
-    width:100%;
+    width:0%;
+    opacity:0;
     height:45px;
     display: flex;
     align-items:center;
@@ -19,7 +20,7 @@ const RootStyle = styled.div`
     border-style:solid;
 
     ${props => props.isActive && css`
-        background-color: #074375;
+        background-color: #0f68bc;
         border-color:#09baf4;
     `}
     ${props => props.isSubMenu && css`
@@ -63,8 +64,8 @@ const IconStyle = styled.div`
 const HeaderStyle = styled.div`
     flex:3 3 0%;
     color:#fff;
-    font-size:1em;
-    color:#ddd;
+    font-size:1.1em;
+    font-family: 'Cabin', sans-serif;
 
     ${props => props.isActive && css`
         color: white;
@@ -88,6 +89,19 @@ const ArrowStyle = styled.div`
 `
 
 class ToolHeader extends React.Component {
+    state = {
+        toolbarWidthBefore:0,
+        toolbarWidthAfter:100
+    }
+
+    componentWillReceiveProps = (nextProps) => {
+        if(this.props.isToolbarExpanded !== nextProps.isToolbarExpanded){
+            this.setState({
+                toolbarWidthBefore: 50,
+                toolbarWidthAfter: 100
+            })
+        }
+    }
 
 
     onClickMenu = (e) => {
@@ -137,17 +151,30 @@ class ToolHeader extends React.Component {
 
         // console.log(header)
         return(
-            <Motion  
-                defaultStyle={{scale: 0 }} 
-                style={{scale: spring(1, config )}}
+            <Motion
+                defaultStyle={{
+                    scale: 0, 
+                    opacity:0,
+                    width:this.state.toolbarWidthBefore
+                }}
+                style={{
+                    scale: spring(1, config ),
+                    opacity: spring(1),
+                    width:spring(this.state.toolbarWidthAfter)
+                }}
             >
             {
                 value => 
 
                 <Link to={`${path}`} onClick={this.onClickMenu}  >
                     <RootStyle isActive={isActive} isSubMenu={isSubMenu} 
-                        isToolbarExpanded={!isToolbarExpanded} style={toCSSZoom(value.scale)} 
-                        data-tip={`${header}`}
+                        isToolbarExpanded={!isToolbarExpanded} 
+                        style={{ 
+                            transform: `scale(1, ${value.scale})`, 
+                            opacity: value.opacity,
+                            width: `${value.width}%`
+                        }}
+                        data-tip={ isToolbarExpanded? null : `${header}`}
                     >
                         <IconStyle isActive={isActive}  isSubMenu={isSubMenu} >
                             <Icon name={icon} size='large'
@@ -173,12 +200,12 @@ class ToolHeader extends React.Component {
                         }
 
                     </RootStyle>
-                    <ReactTooltip 
+                    {!!!isToolbarExpanded && <ReactTooltip 
                         place='left'
                         type='info'
                         effect='solid'
                         delayShow={200}
-                    />
+                    />}
 
                 </Link>
             

@@ -4,9 +4,12 @@ import styled, {css} from 'styled-components'
 import {withRouter} from 'react-router-dom'
 import ToolHeader from './ToolHeader'
 import {Icon} from 'semantic-ui-react'
+import { Transition } from 'react-transition-group'
+
 
 const RootStyle = styled.div`
-    width:100%;
+    width:0%;
+    opacity:0;
     height:100%;
     background-color: #0E2F4E;
     display:flex;
@@ -17,6 +20,24 @@ const RootStyle = styled.div`
     font-size:1.05em;
 
 `
+const defaultStyle = {
+    width:'0%',
+    opacity:0,
+    transition: `width 400ms ease-in-out`,
+
+}
+
+const transitionStyle = {
+    entering:{
+        width:'0%',
+        opacity:0
+    },
+    entered:{
+        width:'100%',
+        opacity:1,
+    }
+}
+
 const HeaderStyle = styled.div`
     width:100%;
 `
@@ -38,11 +59,17 @@ const ArrowStyle = styled.div`
 class SidebarNormal extends React.Component {
 
     state = {
-        activeMenuKey:'status',
-        isShowSubmenu:true
+        activeMenuKey:'vehicles',
+        isShowSubmenu:true,
+        startAnimation:null
+
     }
 
-    
+    componentDidMount = () => {
+        this.setState({
+            startAnimation: true
+        })
+    }
 
     onChangeActiveMenu = (menuKey) => {
         if(this.state.activeMenuKey !== menuKey){
@@ -65,10 +92,13 @@ class SidebarNormal extends React.Component {
     render(){
         const { isToolbarExpanded, toolbarFragments, setFilter, setAction, setToggle, setList }  = this.props
 
-        const {activeMenuKey, isShowSubmenu} = this.state
+        const {activeMenuKey, isShowSubmenu,startAnimation} = this.state
 
         return(
-            <RootStyle>
+
+            <Transition in={startAnimation} timeout={0}>
+            {(state)=> (
+            <RootStyle style={{ ...defaultStyle, ...transitionStyle[state] }} >
                 {
                     toolbarFragments.map((x,i) => (
                         <HeaderStyle key={i} >
@@ -113,6 +143,8 @@ class SidebarNormal extends React.Component {
                     <Icon name= {`${isToolbarExpanded? 'chevron right': 'chevron left' }`} size='large'  />
                 </ArrowStyle>
             </RootStyle>
+            )}
+            </Transition>
         )
         
     }
