@@ -59,7 +59,7 @@ const ArrowStyle = styled.div`
 class SidebarNormal extends React.Component {
 
     state = {
-        activeMenuKey:'vehicles',
+        activeMenuKey:'bins',
         isShowSubmenu:true,
         startAnimation:null
 

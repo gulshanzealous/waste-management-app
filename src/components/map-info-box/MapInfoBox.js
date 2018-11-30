@@ -17,29 +17,37 @@ const IconStyle = styled.div`
 `
 
 const defaultStyle = {
-    transition: `width 400ms ease-out`,
+    transition: `all 400ms ease-out`,
     width: 0,
     height:'100%',
     backgroundColor:'#F5F5F5',
     zIndex:-1,
-    boxShadow: "4px 0px 10px 1px rgba(170,170,170,0.5)",
+    boxShadow: "0px 0px 0px 0px rgba(170,170,170,0.5)",
     display:"flex",
     flexDirection:'column',
-    padding:'30px 10px 20px 10px',
+    padding:'30px 10px 20px 0px',
     justifyContent:'flex-start',
     alignItems:'center'
   }
 
   const transitionStyles = {
-    entering: { width: '0px' },
+    entering: { width: '0px', padding:'0px' },
     entered: { 
         width: '300px',
+        padding:'30px 10px 20px 10px',
+        boxShadow: "4px 0px 10px 1px rgba(170,170,170,0.5)",
+
     },
     exiting: {
         width:'300px',
+        padding:'30px 10px 20px 10px',
+        boxShadow: "4px 0px 10px 1px rgba(170,170,170,0.5)",
+
     },
     exited: { 
         width: '0px',
+        padding:'30px 10px 20px 0px',
+        boxShadow: "0px 0px 0px 0px rgba(170,170,170,0.5)",
     },
 };
 
@@ -158,9 +166,15 @@ class MapInfoBox extends React.Component {
             return(
             <RootStyle  >
                 <Transition in={!!this.props.record} timeout={0}>
-                    <div/>
+                    {(state) => (
+                            <div style={{
+                                ...defaultStyle,
+                                ...transitionStyles[state]
+                            }}>
+                            
+                            </div>
+                    )}
                 </Transition>
-            
             </RootStyle>
             )
         }

@@ -116,17 +116,17 @@ class MapTable extends React.Component {
     }
  
     onSelectCell = (x) => {
-        const { vehicleNumber } = x
+        const { binNumber } = x
         this.props.setFilter({
-            filterKey:'vehicleNumber',
-            filterValue: vehicleNumber,
+            filterKey:'binNumber',
+            filterValue: binNumber,
             entity: this.props.entity,
             fromTable:true
         })
         this.props.showInfoBox({
             entityName: this.props.entity,
-            entityIdentifierKey: 'vehicleNumber',
-            entityIdentifierValue: vehicleNumber,
+            entityIdentifierKey: 'binNumber',
+            entityIdentifierValue: binNumber,
             infoBoxVisible:true
         })
     }
@@ -160,7 +160,7 @@ class MapTable extends React.Component {
                             return valid
                         })
                         .filter(x => {
-                            return x.vehicleNumber.toLowerCase().includes(searchString)
+                            return x.binNumber.toLowerCase().includes(searchString)
                         })
 
         // console.log(data)
@@ -177,7 +177,7 @@ class MapTable extends React.Component {
                             </SearchCloseIcon>
                             <InputStyle>
                                 <Input value={searchString} onChange={this.onChangeSearch} 
-                                placeholder='Enter Vehicle Number' 
+                                placeholder='Enter bin Number' 
                                 style={{width:'80%'}}
                             />
                             </InputStyle>

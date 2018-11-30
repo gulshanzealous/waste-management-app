@@ -10,7 +10,7 @@ import ReactTooltip from 'react-tooltip'
 const RootStyle = styled.div`
     width:0%;
     opacity:0;
-    height:45px;
+    height:55px;
     display: flex;
     align-items:center;
     cursor:pointer;
@@ -25,19 +25,19 @@ const RootStyle = styled.div`
     `}
     ${props => props.isSubMenu && css`
         height:45px;
-        background-color: #074375;
+        background-color: #0E2F4E;
         border-color:#09baf4;
     `}
 
     ${props => props.isSubMenu && css`
         &:hover{
-            background-color:#0E2F4E;
+            background-color:#0f68bc;
         }
     `}
 
     ${props => props.isSubMenu && props.isToolbarExpanded && css`
         height:45px;
-        background-color: #074375;
+        background-color: #0E2F4E;
         padding-left:0px;
         border-color:#09baf4;
     `}

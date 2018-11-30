@@ -9,16 +9,9 @@ class MapComponent extends React.Component{
     constructor(props){
         super(props)
         this.state={
-            vehicles: this.props.vehicles,
-            pois: this.props.pois,
-            geofences: this.props.geofences,
-            trips: this.props.trips,
+            bins: this.props.bins,
 
-            showVehicle: this.props.toggles.vehicle,
-            showPoi: this.props.toggles.poi,
-            showGeofence: this.props.toggles.geofence,
-            showTrip: this.props.toggles.trip,
-            showTraffic: this.props.toggles.traffic
+            showBin: this.props.toggles.bin
         }
 
         this.map = null
@@ -35,38 +28,32 @@ class MapComponent extends React.Component{
 
     componentWillReceiveProps=(nextProps)=>{
         if(
-            this.props.vehicles !== nextProps.vehicles ||
-            this.props.pois !== nextProps.pois ||
-            this.props.geofences !== nextProps.geofences ||
-            this.props.trips !== nextProps.trips ) {
-                const { vehicles, pois, geofences, trips } = nextProps
+            this.props.bins !== nextProps.bins
+         ) {
+                const { bins } = nextProps
                 let {lastFilterEntity} = nextProps
                 let entitiesForBounds = []
                 if(lastFilterEntity === 'all'){
-                    entitiesForBounds = [...vehicles,...pois,...geofences, ...trips]
+                    entitiesForBounds = [...bins]
                 }else{
                     entitiesForBounds = nextProps[lastFilterEntity]
                 }
                 this.fitBounds([...entitiesForBounds])
                 this.setState({
-                    vehicles, pois, geofences, trips
+                    bins
                 })
         }
 
         if(this.props.toggles !== nextProps.toggles){
             this.setState({
-                showVehicle: nextProps.toggles.vehicle,
-                showPoi: nextProps.toggles.poi,
-                showGeofence: nextProps.toggles.geofence,
-                showTrip: nextProps.toggles.trip,
-                showTraffic: nextProps.toggles.traffic
+                showBin: nextProps.toggles.bin,
             })
         }
     }
 
     fitBounds = (entities) => {
-        const { vehicles, pois, geofences, trips } = this.state
-        const allEntities = entities && entities.length ? entities : [...vehicles,...pois,...geofences, ...trips]
+        const { bins } = this.state
+        const allEntities = entities && entities.length ? entities : [...bins]
 
         const bounds = new window.google.maps.LatLngBounds()
         allEntities.forEach((x) => {
@@ -82,21 +69,14 @@ class MapComponent extends React.Component{
         this.fitBounds()
     }
 
-    onClickVehicle = (vehicle) => {
-        this.props.setSelectedVehicle(vehicle)
+    onClickbin = (bin) => {
+        this.props.setSelectedbin(bin)
     }
 
-    onClickGeofence = (geofence) => {
-        this.props.setSelectedGeofence(geofence)
-    }
-
-    onClickPoi = (poi) => {
-        this.props.setSelectedPoi(poi)
-    }
     
     render(){
-        const { vehicles, pois, geofences, trips,
-        showVehicle,showPoi,showGeofence,showTrip,showTraffic} = this.state
+        const { bins,
+        showBin} = this.state
         return(
             <GoogleMap
                 defaultCenter={{ lat: 28.592764, lng:  77.205371 }}
@@ -116,54 +96,21 @@ class MapComponent extends React.Component{
                   }}
             >
 
-                    {!!showVehicle && !!vehicles.length && 
-                        vehicles.map((x,i) => (
+                    {!!showBin && !!bins.length && 
+                        bins.map((x,i) => (
                             <Marker 
                                 key={i} 
                                 position={{ lat: x.coordinates[0], lng: x.coordinates[1] }}
                                 icon={{
-                                    url: require(`${basePath}/${x.vehicleType}-${x.status}.svg`),
+                                    url: require(`${basePath}/${x.binType}-${x.status}.svg`),
                                     // url: require(`${bikePath}`),
                                     scaledSize: new window.google.maps.Size(70,70)
                                 }}
-                                onClick={this.onClickVehicle.bind(this,x)}
+                                onClick={this.onClickbin.bind(this,x)}
                             />
                         ))
                     }
 
-                    {!!showTrip && !!trips.length &&
-                        trips.map((x,i) => (
-                            <Marker key={i} position={{ lat: x.coordinates[0], lng: x.coordinates[1] }}
-                             />
-                        ))
-                    }
-
-                    {!!showPoi && !!pois.length && 
-                        pois.map((x,i) => (
-                            <Marker 
-                            key={i} 
-                            position={{ lat: x.coordinates[0], lng: x.coordinates[1] }}
-                            onClick={this.onClickPoi.bind(this,x)}
-
-                             />
-                        ))
-                    }
-
-                    {!!showGeofence && !!geofences.length &&
-                        geofences.map((x,i) => (
-                            <Marker 
-                            key={i} 
-                            position={{ lat: x.coordinates[0], lng: x.coordinates[1] }} 
-                            onClick={this.onClickGeofence.bind(this,x)}
-
-                            />
-                        ))
-                    }
-
-                    {
-                        !!showTraffic &&
-                        <TrafficLayer autoUpdate />
-                    }
 
 
 

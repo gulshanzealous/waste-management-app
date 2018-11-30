@@ -9,11 +9,11 @@ const RootStyle = styled.div`
 `
 
 const ActionbarStyle = styled.div`
-    min-height:600px;
+    min-height:350px;
     width:60px;
     position:absolute;
     right:0;
-    top:100px;
+    top:200px;
     background-color:#0E2F4E;
     border-radius:10px 0px 0px 10px;
     cursor:pointer;
@@ -25,7 +25,7 @@ const ActionbarStyle = styled.div`
 
 
     ${props => props.isToolbarExpanded && css`
-        width:240px;
+        width:300px;
     `}
 `
 const ListStyle = styled.div`
@@ -59,46 +59,27 @@ class MapBasic extends React.Component {
         isToolbarExpanded:false,
         // mapZoom:8,
 
-        vehiclesStatic:vehiclesSeed,
-        poisStatic:poisSeed,
-        geofencesStatic:geofencesSeed,
-        tripsStatic:tripsSeed,
+        binsStatic:[],
 
-        vehicles:vehiclesSeed,
-        pois:poisSeed,
-        geofences:geofencesSeed,
-        trips:tripsSeed,
+        bins:[],
 
         filters:{
-            vehicles:{
-                field:'status', // running, idle, stopped, inactive
+            bins:{
+                field:'status',
                 value:'all'
             },
-            trips:{
-                field:'tripStatus',
-                value:'all'
-            },
-            // poi:'all', // all,hide, searched
-            // geofence:'all', // all,hide
-            vehicleNumber:'all', // all, vehicleNumber
-            lastFilterEntity:'all' // vehicles,pois,geofences,trips (for setbounds)
+            binNumber:'all', // all, binNumber
+            lastFilterEntity:'all' // bins,pois,geofences,trips (for setbounds)
         },
         toggles:{
-            vehicle:true,
-            poi:true,
-            geofence:true,
-            trip:true,
-            traffic:false
+            bin:true,
         },
         listView:{
             // one at a time
-            entity:'vehicles', // vehicles,pois,geofences, trips
+            entity:'bins',
             visible:false,
             allFields:{
-                'vehicles':['vehicleNumber','status','coordinates'],
-                'pois':['vehicleNumber','poiName','coordinates'],
-                'geofences':['vehicleNumber','geofenceName','coordinates'],
-                'trips':['vehicleNumber','tripStatus','coordinates']
+                'bins':['binNumber','status','coordinates'],
             },
             selectedEntity:null,
             listWidthBefore:0,
@@ -106,8 +87,7 @@ class MapBasic extends React.Component {
         },
 
         actions:{
-            status:'running', // view-list, search
-            poisActions:'', // view-list,create,edit,delete
+            status:'empty', // view-list, search
         },
         infoBox: {
             record:null,
@@ -115,10 +95,7 @@ class MapBasic extends React.Component {
             entityIdentifierKey:null,
             entityIdentifierValue:null,
             allFields:{
-                'vehicles':['vehicleNumber','status','coordinates','fuel','vehicleType'],
-                'pois':['vehicleNumber','poiName','coordinates'],
-                'geofences':['vehicleNumber','geofenceName','coordinates'],
-                'trips':['vehicleNumber','tripStatus','coordinates']
+                'bins':['binNumber','status','coordinates','fill','binType'],
             },
         },
 
@@ -126,7 +103,11 @@ class MapBasic extends React.Component {
     }
 
     componentDidMount = () => {
-
+        this.setState({
+            bins: this.props.binsSeed,
+            binsStatic: this.props.binsSeed,
+            
+        })
     }
 
     componentWillUnmount = () => {
@@ -150,9 +131,9 @@ class MapBasic extends React.Component {
         let allFilters = {}
         if(fromTable===true || entity==='pois' || entity==='geofences'){
             allFilters = {
-                vehicleNumber:filterValue,
+                binNumber:filterValue,
                 lastFilterEntity: entity,
-                vehicles:{
+                bins:{
                     value:'all'
                 },
                 trips:{
@@ -163,27 +144,24 @@ class MapBasic extends React.Component {
             allFilters = {
                 ...this.state.filters,
                 [entity] : { field : filterKey, value: filterValue },
-                vehicleNumber: 'all',
+                binNumber: 'all',
                 lastFilterEntity: 'all'
             }
         }
         
         // console.log(allFilters)
-        const { vehicles: vehicleFilters, trips:tripFilters, vehicleNumber } = allFilters
+        const { bins: binFilters, binNumber } = allFilters
 
 
 
-        const filteredData = this.extractDataforVehicles({ vehicleFilters, tripFilters, vehicleNumber })
-        const { vehicles, pois, geofences, trips } = filteredData
+        const filteredData = this.extractDataforbins({ binFilters, binNumber })
+        const { bins } = filteredData
 
         // const calcZoom = filteredData[entity] && filteredData[entity].length === 1 ? 18 : 12
         // console.log(calcZoom)
 
         this.setState({
-            vehicles,
-            pois,
-            geofences,
-            trips,
+            bins,
             // mapZoom:calcZoom,
             filters:{
                 ...allFilters
@@ -249,10 +227,7 @@ class MapBasic extends React.Component {
                     entityIdentifierKey:null,
                     entityIdentifierValue:null
                 },
-                vehicles:vehiclesSeed,
-                pois:poisSeed,
-                geofences:geofencesSeed,
-                trips:tripsSeed,        
+                bins:binsSeed,
             })
         }
 
@@ -297,103 +272,46 @@ class MapBasic extends React.Component {
         })
     }
 
-    setSelectedVehicle = (vehicle) => {
+    setSelectedbin = (bin) => {
         this.setState((prevState)=>{
             return {
-                vehicles: [vehicle]
+                bins: [bin]
             }
         })
         this.showInfoBox({
-            entityName: 'vehicles',
-            entityIdentifierKey: 'vehicleNumber',
-            entityIdentifierValue: vehicle.vehicleNumber,
-            infoBoxVisible:true
-        })
-    }
-
-    setSelectedPoi = (poi) => {
-        console.log(poi)
-        this.setState((prevState)=>{
-            return {
-                pois: [poi]
-            }
-        })
-        this.showInfoBox({
-            entityName: 'pois',
-            entityIdentifierKey: 'vehicleNumber',
-            entityIdentifierValue: poi.vehicleNumber,
-            infoBoxVisible:true
-        })
-    }
-    
-    setSelectedGeofence = (geofence) => {
-        console.log(geofence)
-        this.setState((prevState)=>{
-            return {
-                geofences: [geofence]
-            }
-        })
-        this.showInfoBox({
-            entityName: 'geofences',
-            entityIdentifierKey: 'vehicleNumber',
-            entityIdentifierValue: geofence.vehicleNumber,
+            entityName: 'bins',
+            entityIdentifierKey: 'binNumber',
+            entityIdentifierValue: bin.binNumber,
             infoBoxVisible:true
         })
     }
     
 
-    extractDataforVehicles = ({vehicleFilters, tripFilters, vehicleNumber}) => {
-        const { vehiclesStatic, poisStatic, geofencesStatic, tripsStatic } = this.state
+    extractDataforbins = ({binFilters, binNumber}) => {
+        const { binsStatic } = this.state
         
-        const vehicles = vehiclesStatic
-                                    .filter(x => {
-                                        if(vehicleFilters.value === 'all'){
-                                            return true
-                                        }
-                                        return x.status === vehicleFilters.value
-                                    })
-                                    .filter(x => {
-                                        if(vehicleNumber!=='all'){
-                                            return vehicleNumber === x.vehicleNumber
-                                        }
-                                        return true
-                                    })
-        const pois = poisStatic
-                                .filter(x => {
-                                    if(vehicleNumber!=='all'){
-                                        return vehicleNumber === x.vehicleNumber
-                                    }
-                                    return true
-                                })
-        
-        const geofences = geofencesStatic
-                                .filter(x => {
-                                    if(vehicleNumber!=='all'){
-                                        return vehicleNumber === x.vehicleNumber
-                                    }
-                                    return true
-                                })
-        const trips = tripsStatic.filter(x => {
-                                        if(tripFilters.value === 'all'){
-                                            return true
-                                        }
-                                        return x.tripStatus === tripFilters.value
-                                    })
-                                .filter(x => {
-                                    if(vehicleNumber!=='all'){
-                                        return vehicleNumber === x.vehicleNumber
-                                    }
-                                    return true
-                                })
+        const bins = binsStatic
+            .filter(x => {
+                if(binFilters.value === 'all'){
+                    return true
+                }
+                return x.status === binFilters.value
+            })
+            .filter(x => {
+                if(binNumber!=='all'){
+                    return binNumber === x.binNumber
+                }
+                return true
+            })
                                 
         return {
-            vehicles, pois, geofences, trips
+            bins
         }
         
     }
 
     render(){
-        const {isToolbarExpanded, vehicles, pois, geofences, trips,
+        const {isToolbarExpanded, bins,
         toggles, listView, infoBox } = this.state
         const {entity:lastFilterEntity} = this.state.listView
         const config = {stiffness:850, damping:50}
@@ -429,18 +347,14 @@ class MapBasic extends React.Component {
                     mapElement={<div style={{ height: `100%`, width:'100%' }} />}
                     // zoom={mapZoom}
 
-                    vehicles={vehicles}
-                    pois={pois}
-                    geofences={geofences}
-                    trips={trips}
+                    bins={bins}
 
                     lastFilterEntity={lastFilterEntity}
 
                     toggles={toggles}
 
-                    setSelectedVehicle={this.setSelectedVehicle}
+                    setSelectedbin={this.setSelectedbin}
                     setSelectedPoi={this.setSelectedPoi}
-                    setSelectedGeofence={this.setSelectedGeofence}
                 />
 
                 <ActionbarStyle isToolbarExpanded={isToolbarExpanded} >
@@ -499,317 +413,111 @@ export default MapBasic
 
 const toolbarFragments = [
     {
-        header:'All Vehicles',
+        header:'All bins',
         filterName:'status',
-        key:'vehicles',
+        key:'bins',
         value:'all',
         icon:'circle',
         color:'inverted',
         type:'filter',
         children:[
             {
-                header:'Running Vehicles',
+                header:'Empty bins (less than 30%)',
                 type:'filter',
                 filterName:'status',
-                key:'vehicles',
+                key:'bins',
                 color:'green',
-                value:'running',
+                value:'empty',
                 icon:'circle',
             },
             {
-                header:'Idle Vehicles',
+                header:'Half bins (30-60%)',
                 type:'filter',
                 filterName:'status',
-                key:'vehicles',
+                key:'bins',
                 color:'orange',
-                value:'idle',
+                value:'half',
                 icon:'circle',
             },
             {
-                header:'Stopped Vehicles',
+                header:'Full bins (more than 60%)',
                 type:'filter',
                 filterName:'status',
-                key:'vehicles',
+                key:'bins',
                 color:'red',
-                value:'stopped',
+                value:'full',
                 icon:'circle',
             },
             {
-                header:'Inactive Vehicles',
+                header:'Inactive bins',
                 type:'filter',
                 filterName:'status',
-                key:'vehicles',
+                key:'bins',
                 color:'grey',
                 value:'inactive',
                 icon:'circle',
             },
-            // {
-            //     header:'Search Vehicle',
-            //     type:'action',
-            //     key:'vehicleNumber',
-            //     value:'search-vehicle',
-            //     icon:'search',
-            // },
             {
                 header:'View List',
                 type:'list',
-                key:'vehicles',
-                value:'view-list',
-                icon:'list layout',
-            },
-            {
-                header:'Hide Vehicles',
-                type:'toggle',
-                key:'vehicle',
-                value:'toggle',
-                icon:'ban',
-            },
-        ]
-    },
-    {
-        header:'All Trips',
-        key:'trips',
-        filterName:'tripStatus',
-        value:'all',
-        type:'filter',
-        icon:'rocket',
-        color:'inverted',
-        children:[
-            {
-                header:'Ongoing Trips',
-                type:'filter',
-                key:'trips',
-                filterName:'tripStatus',
-                color:'green',
-                value:'ongoing',
-                icon:'rocket',
-            },
-            {
-                header:'Finished Trips',
-                type:'filter',
-                key:'trips',
-                filterName:'tripStatus',
-                color:'orange',
-                value:'finished',
-                icon:'rocket',
-            },
-            {
-                header:'Planned Trips',
-                type:'filter',
-                key:'trips',
-                filterName:'tripStatus',
-                color:'blue',
-                value:'planned',
-                icon:'rocket',
-            },
-            {
-                header:'Abandoned Trips',
-                type:'filter',
-                key:'trips',
-                filterName:'tripStatus',
-                color:'red',
-                value:'abandoned',
-                icon:'rocket',
-            },
-            // {
-            //     header:'Search Trips',
-            //     type:'action',
-            //     key:'trip',
-            //     value:'search-trip',
-            //     icon:'search',
-            // },
-            {
-                header:'View List',
-                type:'list',
-                key:'trips',
-                value:'view-list',
-                icon:'list layout',
-            },
-            {
-                header:'Hide Trips',
-                type:'toggle',
-                key:'trip',
-                value:'toggle',
-                icon:'ban',
-            },
-        ]
-    },
-    {
-        header:'Point of interest',
-        key:'pois',
-        value:'all',
-        type:'filter',
-        icon:'point',
-        color:'inverted',
-        children:[
-            {
-                header:'Toggle POIs',
-                type:'toggle',
-                key:'poi',
-                value:'toggle',
-                icon:'hide',
-            },
-            // {
-            //     header:'Create POI',
-            //     type:'action',
-            //     key:'poi',
-            //     value:'create',
-            //     icon:'add square',
-            // },
-            // {
-            //     header:'Edit POI',
-            //     type:'action',
-            //     key:'poi',
-            //     value:'edit',
-            //     icon:'edit',
-            // },
-            // {
-            //     header:'Delete POI',
-            //     type:'action',
-            //     key:'poi',
-            //     value:'delete',
-            //     icon:'close',
-            // },
-            {
-                header:'View List',
-                type:'list',
-                key:'pois',
+                key:'bins',
                 value:'view-list',
                 icon:'list layout',
             },
         ]
     },
-    {
-        header:'Geofences',
-        key:'geofences',
-        value:'all',
-        type:'filter',
-        icon:'map signs',
-        color:'inverted',
-        children:[
-            {
-                header:'Toggle Geofences',
-                type:'toggle',
-                key:'geofence',
-                value:'toggle',
-                icon:'hide',
-            },
-            // {
-            //     header:'Create Geofence',
-            //     type:'action',
-            //     key:'geofence',
-            //     value:'create',
-            //     icon:'add square',
-            // },
-            // {
-            //     header:'Edit Geofence',
-            //     type:'action',
-            //     key:'geofence',
-            //     value:'edit',
-            //     icon:'edit',
-            // },
-            // {
-            //     header:'Delete Geofence',
-            //     type:'action',
-            //     key:'geofence',
-            //     value:'delete',
-            //     icon:'close',
-            // },
-            {
-                header:'View List',
-                type:'list',
-                key:'geofences',
-                value:'view-list',
-                icon:'list layout',
-            },
-        ]
-    },
-    {
-        header:'Traffic Mode',
-        key:'traffic',
-        value:'toggle',
-        type:'toggle',
-        icon:'road',
-        color:'inverted',
-        children:[]
-    },
-    
-    
 ]
 
-// status - running, stopped, idle, inactive, ontrip
-// vehicleType - car, truck, motorcyle
-const vehiclesSeed = [
+// status - empty, half, full, inactive,
+const binsSeed = [
     {
         coordinates:[28.731188, 77.127796],
-        status:'running',
-        vehicleNumber:'DL11SH6952',
-        fuel:'60%',
-        vehicleType:'car'
+        status:'empty',
+        binNumber:'bin34343',
+        fill:'10%',
+        binType:'bin'
     },
     {
         coordinates:[28.725909, 77.061754],
-        status:'running',
-        vehicleNumber:'DL46FR7832',
-        fuel:'80%',
-        vehicleType:'truck'
+        status:'empty',
+        binNumber:'bin97996',
+        fill:'15%',
+        binType:'bin'
     },
     {
         coordinates:[28.516222, 77.202781],
-        status:'stopped',
-        vehicleNumber:'UP79NA5634',
-        fuel:'20%',
-        vehicleType:'car'
+        status:'full',
+        binNumber:'bin2323232',
+        fill:'90%',
+        binType:'bin'
     },
     {
         coordinates:[28.648536, 77.273403],
-        status:'inactive',
-        vehicleNumber:'HR27PT0235',
-        fuel:'50%',
-        vehicleType:'car'
+        status:'half',
+        binNumber:'bin020223',
+        fill:'50%',
+        binType:'bin'
     },
     {
         coordinates:[28.648216, 77.271202],
-        status:'idle',
-        vehicleNumber:'DL73UY9834',
-        fuel:'50%',
-        vehicleType:'car'
+        status:'full',
+        binNumber:'bin2929232',
+        fill:'85%',
+        binType:'bin'
     },
     {
         coordinates:[28.658496, 77.450198],
+        status:'half',
+        binNumber:'bin3200699',
+        fill:'40%',
+        binType:'bin'
+    },   
+    {
+        coordinates:[28.653396, 77.650198],
         status:'inactive',
-        vehicleNumber:'HR35BC7355',
-        fuel:'50%',
-        vehicleType:'motorcycle'
+        binNumber:'bin7833699',
+        fill:'40%',
+        binType:'bin'
     },   
 ]
 
-const poisSeed = [
-    
-    {
-        coordinates:[28.662130, 77.446014],
-        poiName:'Kamla nagar market',
-        vehicleNumber:'HR35BC7355',
-    },
-    {
-        coordinates:[28.623010, 77.390599],
-        poiName:'Indirapuram',
-        vehicleNumber:'HR27PT0235',
-    },
-]
-
-const geofencesSeed = [
-    
-    {
-        coordinates:[28.662178, 77.44674],
-        geofenceName:'Kamla nagar market',
-        vehicleNumber:'HR35BC7355',
-    },
-    {
-        coordinates:[28.623015, 77.390592],
-        geofenceName:'Indirapuram',
-        vehicleNumber:'HR27PT0235',
-    },
-]
-
-const tripsSeed = []
